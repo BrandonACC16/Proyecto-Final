@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Práctica 6 - Pokédex API</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #99dbfa;
+            font-family: Arial, sans-serif;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px;
+            background-color: #1373a0;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .pokeball-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        .pokemon-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            min-height: 80vh;
+        }
+        
+        .pokemon-image {
+            width: 250px;
+            height: 250px;
+            margin: 20px;
+            background-color: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .pokemon-info {
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+            margin: 20px;
+            background-color: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .search-container {
+            text-align: center;
+            margin: 20px;
+        }
+        
+        .placeholder {
+            width: 200px;
+            height: 50px;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            font-size: 18px;
+            background-color: #f0f0f0;
+            text-align: center;
+            border: 2px solid #1373a0;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        
+        button {
+            width: 80px;
+            height: 50px;
+            background-color: #1373a0;
+            border: 2px solid #25a3d6;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        button:hover {
+            background-color: #25a3d6;
+        }
+        
+        .pokemon-details {
+            font-family: 'Courier New', Courier, monospace;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .pokemon-details div {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Práctica 6 - Pokédex API</h1>
+        <p>Busca información de cualquier Pokémon</p>
+    </div>
+    
+    <div class="search-container">
+        <input type="text" placeholder="pikachu" id="pokeName" class="placeholder">
+        <button onclick="fetchPokemon()">Buscar</button>
+    </div>
+
+    <div class="pokemon-container">
+        <div class="pokemon-image">
+            <img src="pokebola.png" alt="pokebola" id="pokeImg" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+
+        <div class="pokemon-info">
+            <div class="pokemon-details">
+                <div id="pokename"><strong>Nombre:</strong> -</div>
+                <div id="pokeHe"><strong>Altura:</strong> -</div>
+                <div id="pokeWe"><strong>Peso:</strong> -</div>
+                <div id="pokeType"><strong>Tipo:</strong> -</div>
+                <div id="pokeitem"><strong>Habilidad:</strong> -</div>
+                <div id="pokemove1"><strong>Movimiento 1:</strong> -</div>
+                <div id="pokemove2"><strong>Movimiento 2:</strong> -</div>
+                <div id="pokemove3"><strong>Movimiento 3:</strong> -</div>
+                <div id="pokemove4"><strong>Movimiento 4:</strong> -</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="miCanvas"></canvas>
+    </div>    <script>
+        const pokeImage = (url) => {
+            const pokeImg = document.getElementById("pokeImg");
+            pokeImg.src = url;
+        };
+
+        const fetchPokemon = () => {
+            const pokeNameInput = document.getElementById("pokeName");
+            let pokeName = pokeNameInput.value.toLowerCase().trim();
+            
+            if (!pokeName) {
+                pokeName = "pikachu";
+            }
+              const url = `https://pokeapi.co/api/v2/pokemon/${pokeName}`;
+            
+            document.getElementById('pokename').innerHTML = '<strong>Nombre:</strong> Buscando...';
+            
+            fetch(url)
+                .then((res) => {
+                    if (res.status !== 200) {
+                        throw new Error(`Pokémon no encontrado: ${res.status}`);
+                    }
+                    return res.json();
+                })
+                .then((data) => {                    console.log(data);
+                    
+                    let pokeImg = data.sprites.front_default;
+                    if (pokeImg) {
+                        pokeImage(pokeImg);
+                    }
+                    
+                    document.getElementById('pokename').innerHTML = `<strong>Nombre:</strong> ${data.name}`;
+                    document.getElementById('pokeHe').innerHTML = `<strong>Altura:</strong> ${data.height / 10} m`;
+                    document.getElementById('pokeWe').innerHTML = `<strong>Peso:</strong> ${data.weight / 10} kg`;
+                    document.getElementById('pokeitem').innerHTML = `<strong>Habilidad:</strong> ${data.abilities[0]?.ability.name || 'N/A'}`;
+                    document.getElementById('pokeType').innerHTML = `<strong>Tipo:</strong> ${data.types.map(type => type.type.name).join(', ')}`;
+                    document.getElementById('pokemove1').innerHTML = `<strong>Movimiento 1:</strong> ${data.moves[0]?.move.name || 'N/A'}`;
+                    document.getElementById('pokemove2').innerHTML = `<strong>Movimiento 2:</strong> ${data.moves[1]?.move.name || 'N/A'}`;
+                    document.getElementById('pokemove3').innerHTML = `<strong>Movimiento 3:</strong> ${data.moves[2]?.move.name || 'N/A'}`;                   
+                     document.getElementById('pokemove4').innerHTML = `<strong>Movimiento 4:</strong> ${data.moves[3]?.move.name || 'N/A'}`;
+
+                    const ctx = document.getElementById("miCanvas").getContext("2d");
+                    if (window.miChart) {
+                        window.miChart.destroy();
+                    }
+                    window.miChart = new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: ["HP", "Ataque", "Defensa", "Ataque Esp.", "Defensa Esp.", "Velocidad"],
+                            datasets: [{
+                                label: `Estadísticas de ${data.name}`,                                data: [
+                                    data.stats[0].base_stat,
+                                    data.stats[1].base_stat,
+                                    data.stats[2].base_stat,
+                                    data.stats[3].base_stat,
+                                    data.stats[4].base_stat,
+                                    data.stats[5].base_stat
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.5)',
+                                    'rgba(54, 162, 235, 0.5)',
+                                    'rgba(255, 206, 86, 0.5)',
+                                    'rgba(75, 192, 192, 0.5)',
+                                    'rgba(153, 102, 255, 0.5)',
+                                    'rgba(255, 159, 64, 0.5)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 150
+                                }
+                            },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: `Estadísticas de ${data.name}`
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    document.getElementById('pokename').innerHTML = '<strong>Error:</strong> Pokémon no encontrado';
+                    document.getElementById('pokeHe').innerHTML = '<strong>Altura:</strong> -';
+                    document.getElementById('pokeWe').innerHTML = '<strong>Peso:</strong> -';
+                    document.getElementById('pokeType').innerHTML = '<strong>Tipo:</strong> -';
+                    document.getElementById('pokeitem').innerHTML = '<strong>Habilidad:</strong> -';
+                    document.getElementById('pokemove1').innerHTML = '<strong>Movimiento 1:</strong> -';
+                    document.getElementById('pokemove2').innerHTML = '<strong>Movimiento 2:</strong> -';
+                    document.getElementById('pokemove3').innerHTML = '<strong>Movimiento 3:</strong> -';
+                    document.getElementById('pokemove4').innerHTML = '<strong>Movimiento 4:</strong> -';
+                });        };
+
+        window.onload = () => {
+            fetchPokemon();
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pokeName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    fetchPokemon();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
